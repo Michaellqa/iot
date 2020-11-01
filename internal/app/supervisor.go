@@ -52,7 +52,10 @@ func (s *Supervisor) Init(cfg Config) {
 	s.aggregators = make([]*aggregation.Aggregator, len(cfg.Aggregators))
 
 	for i, agg := range cfg.Aggregators {
-		s.aggregators[i] = aggregation.NewAggregator(s.broker, store, time.Duration(agg.AggregationPeriodSec), agg.SubIds)
+		fifo := &aggregation.ListFifo{}
+		asyncStore := aggregation.NewAsyncStorage(fifo, store)
+		aggPeriod := time.Duration(agg.AggregationPeriodSec) * time.Second
+		s.aggregators[i] = aggregation.NewAggregator(s.broker, asyncStore, aggPeriod, agg.SubIds)
 	}
 }
 
@@ -72,17 +75,18 @@ func (s *Supervisor) Start() {
 	}
 	wg.Wait()
 
-	log.Println("supervisor: generators done")
+	log.Println("SUPERVISOR: generators done")
 
 	s.broker.Close()
 
 	wg.Add(len(s.aggregators))
 	for _, agg := range s.aggregators {
 		agg.Wait()
+		wg.Done()
 	}
-	wg.Done()
+	wg.Wait()
 
-	log.Println("supervisor: aggregators done")
+	log.Println("SUPERVISOR: aggregators done")
 }
 
 func (s *Supervisor) Shutdown() {
@@ -91,7 +95,7 @@ func (s *Supervisor) Shutdown() {
 		gen.Stop()
 	}
 
-	log.Println("supervisor: generators stopped")
+	log.Println("SUPERVISOR: generators stopped")
 
 	s.broker.Close()
 
@@ -105,5 +109,5 @@ func (s *Supervisor) Shutdown() {
 		}()
 	}
 	wg.Wait()
-	log.Println("supervisor: aggregators stopped")
+	log.Println("SUPERVISOR: aggregators stopped")
 }

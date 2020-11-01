@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	log.SetFlags(log.Flags() | log.Llongfile)
+	log.SetFlags(log.Flags() | log.Llongfile | log.Lmicroseconds)
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
@@ -29,20 +29,20 @@ func main() {
 
 	go func() {
 		<-sigs
-		log.Println("shutting down ...")
+		log.Println("APP: shutting down ...")
 		sv.Shutdown()
 		os.Exit(1)
 	}()
 
 	<-done
-	log.Println("finished successfully")
+	log.Println("APP: finished successfully")
 }
 
 func readConfig() app.Config {
 	return app.Config{
 		Generators: []app.GeneratorConfig{
 			{
-				TimeoutSec:    10,
+				TimeoutSec:    7,
 				SendPeriodSec: 1,
 				DataSources: []app.DataSourceConfig{
 					{Id: "data_1", InitValue: 50, MaxChangeStep: 5},
@@ -51,7 +51,7 @@ func readConfig() app.Config {
 		},
 		Queue: app.QueueConfig{Size: 50},
 		Aggregators: []app.AggregatorConfig{
-			{AggregationPeriodSec: 4, SubIds: []string{"data_1"}},
+			{AggregationPeriodSec: 2, SubIds: []string{"data_1"}},
 		},
 		Storage: app.StorageConfig{Type: 0},
 	}

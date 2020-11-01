@@ -1,19 +1,25 @@
 package aggregation
 
+type Fifo interface {
+	Add(interface{})
+	Get() interface{}
+	Len() int
+}
+
 type node struct {
 	prev *node
 	next *node
 	val  interface{}
 }
 
-// fifo queue based on double linked list
-type fifo struct {
+// ListFifo queue based on double linked list
+type ListFifo struct {
 	head *node
 	tail *node
 	len  int
 }
 
-func (f *fifo) add(elem interface{}) {
+func (f *ListFifo) Add(elem interface{}) {
 	n := &node{val: elem}
 	if f.len == 0 {
 		f.head = n
@@ -26,7 +32,7 @@ func (f *fifo) add(elem interface{}) {
 	f.len++
 }
 
-func (f *fifo) get() interface{} {
+func (f *ListFifo) Get() interface{} {
 	if f.len == 0 {
 		return nil
 	}
@@ -41,4 +47,8 @@ func (f *fifo) get() interface{} {
 	}
 	f.len--
 	return elem
+}
+
+func (f *ListFifo) Len() int {
+	return f.len
 }

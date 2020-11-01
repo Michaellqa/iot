@@ -1,6 +1,9 @@
 package messaging
 
-import "sync"
+import (
+	"log"
+	"sync"
+)
 
 type Broker interface {
 	Publish(msg Message)
@@ -40,10 +43,12 @@ func (b *broker) Subscribe() <-chan Message {
 func (b *broker) Close() {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	for _, q := range b.queues {
+	for i, q := range b.queues {
 		q.stop()
+		log.Printf("BROKER: queue %d/%d is closed\n", i+1, len(b.queues))
 	}
 	b.queues = nil
+	log.Println("BROKER: closed")
 }
 
 // queue keeps track of messages that should be delivered to a subscriber. If buffer has reached

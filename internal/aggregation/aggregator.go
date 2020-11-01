@@ -14,7 +14,7 @@ type Record struct {
 
 func NewAggregator(
 	broker messaging.Broker,
-	store Storage,
+	store AsyncStorage,
 	period time.Duration,
 	subIds []string,
 ) *Aggregator {
@@ -22,7 +22,7 @@ func NewAggregator(
 		buf:    newBuffer(),
 		broker: broker,
 		period: period,
-		store:  newAsyncStorage(store),
+		store:  store,
 		subIds: make(map[string]struct{}),
 	}
 	for _, id := range subIds {
@@ -34,7 +34,7 @@ func NewAggregator(
 type Aggregator struct {
 	buf    *buffer
 	broker messaging.Broker
-	store  *asyncStorage
+	store  AsyncStorage
 
 	period time.Duration
 	subIds map[string]struct{}
@@ -53,8 +53,8 @@ func (a *Aggregator) Start() {
 		select {
 		case msg, alive := <-msgCh:
 			if !alive {
-				// flush what is left in the buffer.
-				a.aggregate()
+				// doesn't flush what is left in the buffer.
+				//a.aggregate()
 				return
 			}
 			metrics := msg.(generation.Metrics)
@@ -83,7 +83,7 @@ func (a *Aggregator) Stop() {
 
 func (a *Aggregator) aggregate() {
 	records := a.buf.flush()
-	log.Println("DEBUG: aggregated data:", records)
+	log.Println("AGGREGATOR: aggregated data:", records)
 	for _, r := range records {
 		a.store.Add(r)
 	}

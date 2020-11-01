@@ -2,6 +2,7 @@ package generation
 
 import (
 	"github.com/Michaellqa/iot/internal/messaging"
+	"log"
 	"time"
 )
 
@@ -49,11 +50,11 @@ func (g *Generator) Start() <-chan struct{} {
 		ticker := time.NewTicker(g.sendPeriod)
 		defer func() {
 			ticker.Stop()
-			if !timeout.Stop() {
+			if timeout.Stop() {
+				// todo: wtf
 				<-timeout.C
 			}
-			// non blocking
-			done <- struct{}{}
+			close(done)
 		}()
 
 		for {
@@ -62,8 +63,10 @@ func (g *Generator) Start() <-chan struct{} {
 				g.generate()
 
 			case <-timeout.C:
+				log.Println("GENERATOR: timed out")
 				return
 			case <-g.stop:
+				log.Println("GENERATOR: stopped")
 				return
 			}
 		}

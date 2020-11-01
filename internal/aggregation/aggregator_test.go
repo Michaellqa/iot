@@ -43,7 +43,9 @@ func TestAggregator(t *testing.T) {
 	emulateGeneratorEvents(broker)
 
 	store := storage.Console{}
-	agg := aggregation.NewAggregator(broker, store, aggregationPeriod, []string{"data_1"})
+	fifo := &aggregation.ListFifo{}
+	asyncStore := aggregation.NewAsyncStorage(fifo, store)
+	agg := aggregation.NewAggregator(broker, asyncStore, aggregationPeriod, []string{"data_1"})
 
 	go agg.Start()
 

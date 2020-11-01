@@ -6,39 +6,39 @@ func TestList_Add_Get(t *testing.T) {
 
 	cases := []struct {
 		name        string
-		sequence    func(q *fifo)
+		sequence    func(q *ListFifo)
 		expectedSum int
 	}{
 		//{
 		//	name:        "no additions",
-		//	sequence:    func(q *fifo) {},
+		//	sequence:    func(fifo *ListFifo) {},
 		//	expectedSum: 0,
 		//},
 		{
 			name: "additions only",
-			sequence: func(q *fifo) {
-				q.add(1)
-				q.add(2)
-				q.add(4)
+			sequence: func(q *ListFifo) {
+				q.Add(1)
+				q.Add(2)
+				q.Add(4)
 			},
 			expectedSum: 7,
 		},
 		{
 			name: "mixed adds and gets",
-			sequence: func(q *fifo) {
-				q.get()
-				q.add(1)
-				q.add(2)
-				q.get()
-				q.add(4)
-				q.get()
-				q.add(8)
+			sequence: func(q *ListFifo) {
+				q.Get()
+				q.Add(1)
+				q.Add(2)
+				q.Get()
+				q.Add(4)
+				q.Get()
+				q.Add(8)
 			},
 			expectedSum: 12,
 		},
 	}
 	for _, c := range cases {
-		q := &fifo{}
+		q := &ListFifo{}
 		c.sequence(q)
 		res := queueSum(q)
 
@@ -48,10 +48,10 @@ func TestList_Add_Get(t *testing.T) {
 	}
 }
 
-func queueSum(q *fifo) int {
+func queueSum(q *ListFifo) int {
 	res := 0
 	for {
-		v := q.get()
+		v := q.Get()
 		if v == nil {
 			break
 		}
