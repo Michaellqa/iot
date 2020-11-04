@@ -1,9 +1,0 @@
-version: '3.8'
-
-services:
-  iot:
-    build: .
-    volumes:
-    - iot-data: /app/data
-volumes:
-  iot-data:
