@@ -1,10 +1,9 @@
 package aggregation_test
 
 import (
-	"github.com/Michaellqa/iot/internal/aggregation"
-	"github.com/Michaellqa/iot/internal/generation"
-	"github.com/Michaellqa/iot/internal/messaging"
-	"github.com/Michaellqa/iot/internal/storage"
+	"github.com/Michaellqa/iot/generation"
+	"github.com/Michaellqa/iot/messaging"
+	"github.com/Michaellqa/iot/storage"
 	"log"
 	"testing"
 	"time"
@@ -19,7 +18,7 @@ const (
 type slowStorage struct {
 }
 
-func (s slowStorage) Write(r aggregation.Record) error {
+func (s slowStorage) Write(r Record) error {
 	time.Sleep(saveDuration)
 	log.Printf("%s: %v\n", r.Id, r.Value)
 	return nil
@@ -43,9 +42,9 @@ func TestAggregator(t *testing.T) {
 	emulateGeneratorEvents(broker)
 
 	store := storage.Console{}
-	fifo := &aggregation.ListFifo{}
-	asyncStore := aggregation.NewAsyncStorage(fifo, store)
-	agg := aggregation.NewAggregator(broker, asyncStore, aggregationPeriod, []string{"data_1"})
+	fifo := &ListFifo{}
+	asyncStore := NewAsyncStorage(fifo, store)
+	agg := NewAggregator(broker, asyncStore, aggregationPeriod, []string{"data_1"})
 
 	go agg.Start()
 

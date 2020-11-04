@@ -1,7 +1,7 @@
 package generation
 
 import (
-	"github.com/Michaellqa/iot/internal/messaging"
+	"github.com/Michaellqa/iot/messaging"
 	"log"
 	"time"
 )

@@ -1,15 +1,16 @@
 package aggregation
 
 import (
-	"github.com/Michaellqa/iot/internal/generation"
-	"github.com/Michaellqa/iot/internal/messaging"
+	"github.com/Michaellqa/iot/generation"
+	"github.com/Michaellqa/iot/messaging"
 	"log"
 	"time"
 )
 
 type Record struct {
-	Id    string
-	Value float64
+	Id        string
+	Value     float64
+	Timestamp time.Time
 }
 
 func NewAggregator(
@@ -115,11 +116,8 @@ func (b *buffer) flush() []Record {
 			sum += v
 		}
 		avg := float64(sum) / float64(len(values))
-		results = append(results, Record{Id: id, Value: avg})
+		results = append(results, Record{Id: id, Value: avg, Timestamp: time.Now()})
 	}
-
-	// clear the buffer
-	// b.data = make(map[string][]int)
 
 	// clear the buffer, reuse memory
 	for k := range b.data {

@@ -5,7 +5,7 @@
 package mock_aggregation
 
 import (
-	aggregation "github.com/Michaellqa/iot/internal/aggregation"
+	aggregation "github.com/Michaellqa/iot/aggregation"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )

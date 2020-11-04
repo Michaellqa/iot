@@ -1,10 +1,11 @@
 package app
 
 import (
-	"github.com/Michaellqa/iot/internal/aggregation"
-	"github.com/Michaellqa/iot/internal/generation"
-	"github.com/Michaellqa/iot/internal/messaging"
-	"github.com/Michaellqa/iot/internal/storage"
+	"context"
+	"github.com/Michaellqa/iot/aggregation"
+	"github.com/Michaellqa/iot/generation"
+	"github.com/Michaellqa/iot/messaging"
+	"github.com/Michaellqa/iot/storage"
 	"log"
 	"sync"
 	"time"
@@ -37,59 +38,69 @@ func (s *Supervisor) Init(cfg Config) {
 
 	// create storage
 	var store aggregation.Storage
-	switch cfg.Storage.Type {
+	switch cfg.StorageType {
 	case 1:
-		var filename string
-		if cfg.Storage.Options != nil {
-			filename = cfg.Storage.Options.Filename
-		}
-		store = storage.NewFileStorage(filename)
+		store = storage.NewFileStorage()
+	case 2:
+		store = storage.SlowStorage{}
 	default:
 		store = storage.Console{}
 	}
+	fifo := &aggregation.ListFifo{}
+	asyncStore := aggregation.NewAsyncStorage(fifo, store)
 
 	// create aggregators
 	s.aggregators = make([]*aggregation.Aggregator, len(cfg.Aggregators))
 
 	for i, agg := range cfg.Aggregators {
-		fifo := &aggregation.ListFifo{}
-		asyncStore := aggregation.NewAsyncStorage(fifo, store)
 		aggPeriod := time.Duration(agg.AggregationPeriodSec) * time.Second
 		s.aggregators[i] = aggregation.NewAggregator(s.broker, asyncStore, aggPeriod, agg.SubIds)
 	}
 }
 
-func (s *Supervisor) Start() {
-	for _, agg := range s.aggregators {
-		go agg.Start()
-	}
+func (s *Supervisor) Start(ctx context.Context) {
+	done := make(chan struct{}, 1)
 
-	wg := sync.WaitGroup{}
-	wg.Add(len(s.generators))
-	for _, gen := range s.generators {
-		go func() {
-			done := gen.Start()
-			<-done
+	go func() {
+		for _, agg := range s.aggregators {
+			go agg.Start()
+		}
+
+		wg := sync.WaitGroup{}
+		wg.Add(len(s.generators))
+		for _, gen := range s.generators {
+			go func() {
+				genDone := gen.Start()
+				<-genDone
+				wg.Done()
+			}()
+		}
+		wg.Wait()
+
+		log.Println("SUPERVISOR: generators done")
+
+		s.broker.Close()
+
+		wg.Add(len(s.aggregators))
+		for _, agg := range s.aggregators {
+			agg.Wait()
 			wg.Done()
-		}()
+		}
+		wg.Wait()
+
+		log.Println("SUPERVISOR: aggregators done")
+
+		done <- struct{}{}
+	}()
+
+	select {
+	case <-done:
+	case <-ctx.Done():
+		s.shutdown()
 	}
-	wg.Wait()
-
-	log.Println("SUPERVISOR: generators done")
-
-	s.broker.Close()
-
-	wg.Add(len(s.aggregators))
-	for _, agg := range s.aggregators {
-		agg.Wait()
-		wg.Done()
-	}
-	wg.Wait()
-
-	log.Println("SUPERVISOR: aggregators done")
 }
 
-func (s *Supervisor) Shutdown() {
+func (s *Supervisor) shutdown() {
 	// stop all generators
 	for _, gen := range s.generators {
 		gen.Stop()

@@ -52,7 +52,7 @@ func (b *broker) Close() {
 }
 
 // queue keeps track of messages that should be delivered to a subscriber. If buffer has reached
-// max capacity and a new message is pushed the queue will save it but will remove the oldest
+// max capacity and a new message is pushed, the queue will save it but also removes the oldest
 // message.
 type queue struct {
 	addCh  chan Message

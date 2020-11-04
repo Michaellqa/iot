@@ -1,8 +1,7 @@
 package aggregation_test
 
 import (
-	"github.com/Michaellqa/iot/internal/aggregation"
-	"github.com/Michaellqa/iot/internal/aggregation/mock_aggregation"
+	"github.com/Michaellqa/iot/aggregation/mock_aggregation"
 	"github.com/golang/mock/gomock"
 	"testing"
 	"time"
@@ -14,7 +13,7 @@ func TestAsyncStorage(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	store := mock_aggregation.NewMockStorage(ctrl)
 	fifo := mock_aggregation.NewMockFifo(ctrl)
-	as := aggregation.NewAsyncStorage(fifo, store)
+	as := NewAsyncStorage(fifo, store)
 
 	cases := []struct {
 		name               string
@@ -23,7 +22,7 @@ func TestAsyncStorage(t *testing.T) {
 		{
 			name: "",
 			setupExpectedCalls: func() {
-				record := aggregation.Record{Id: "id_1", Value: float64(1)}
+				record := Record{Id: "id_1", Value: float64(1)}
 				fifo.EXPECT().Add(record)
 				fifo.EXPECT().Get().Return(interface{}(record))
 				store.EXPECT().Write(record).Do(func(interface{}) {
