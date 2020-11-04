@@ -3,7 +3,7 @@ package aggregation
 import (
 	"github.com/Michaellqa/iot/generation"
 	"github.com/Michaellqa/iot/messaging"
-	"log"
+	"sync"
 	"time"
 )
 
@@ -25,6 +25,7 @@ func NewAggregator(
 		period: period,
 		store:  store,
 		subIds: make(map[string]struct{}),
+		done:   make(chan struct{}),
 	}
 	for _, id := range subIds {
 		a.subIds[id] = struct{}{}
@@ -41,6 +42,7 @@ type Aggregator struct {
 	subIds map[string]struct{}
 
 	done chan struct{}
+	once sync.Once
 }
 
 func (a *Aggregator) Start() {
@@ -65,26 +67,31 @@ func (a *Aggregator) Start() {
 
 		case <-ticker.C:
 			a.aggregate()
+		case <-a.done:
+			return
 		}
-		// todo: add stop
 	}
-
-	// log: aggregation has stopped
 }
 
 // Wait is safe to be called if already stopped.
 func (a *Aggregator) Wait() {
+	a.once.Do(func() {
+		a.done <- struct{}{}
+	})
 	a.store.Wait()
 }
 
 // Stop is safe to be called if already stopped.
 func (a *Aggregator) Stop() {
+	a.once.Do(func() {
+		a.done <- struct{}{}
+	})
 	a.store.Close()
 }
 
 func (a *Aggregator) aggregate() {
 	records := a.buf.flush()
-	log.Println("AGGREGATOR: aggregated data:", records)
+	//log.Println("AGGREGATOR: aggregated data:", records)
 	for _, r := range records {
 		a.store.Add(r)
 	}

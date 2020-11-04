@@ -95,7 +95,7 @@ func (q *queue) start() {
 	}
 }
 
-// push in not blocking
+// push is not blocking
 func (q *queue) push(m Message) {
 	q.addCh <- m
 }

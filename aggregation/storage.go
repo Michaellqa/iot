@@ -19,7 +19,6 @@ func NewAsyncStorage(fifo Fifo, store Storage) *asyncStorage {
 		fifo:  fifo,
 		store: store,
 
-		// todo: check capacities
 		adding:  make(chan Record, 1),
 		closing: make(chan struct{}, 1),
 		waiting: make(chan struct{}),
@@ -49,7 +48,7 @@ func (s *asyncStorage) Add(r Record) {
 	s.adding <- r
 }
 
-// Wait stops receiving new records and blocks until all the entries in the queue are saved.
+// Wait blocks until all the entries in the queue are saved and breaks the process loop.
 func (s *asyncStorage) Wait() {
 	select {
 	case <-s.done:
@@ -87,8 +86,6 @@ func (s *asyncStorage) process() {
 				return
 			}
 			quitOnSavedLast <- struct{}{}
-			// disable accepting new records
-			s.adding = nil
 		default:
 		}
 
@@ -122,7 +119,6 @@ func (s *asyncStorage) process() {
 				}
 				saveDone <- struct{}{}
 			}()
-
 		case <-saveDone:
 			saveDone = nil
 			draining = make(chan struct{})
@@ -133,8 +129,7 @@ func (s *asyncStorage) process() {
 				return
 			}
 			quitOnSavedLast <- struct{}{}
-			// disable accepting new records
-			s.adding = nil
+
 		case <-s.closing:
 			return
 		}

@@ -9,11 +9,11 @@ func TestList_Add_Get(t *testing.T) {
 		sequence    func(q *ListFifo)
 		expectedSum int
 	}{
-		//{
-		//	name:        "no additions",
-		//	sequence:    func(fifo *ListFifo) {},
-		//	expectedSum: 0,
-		//},
+		{
+			name:        "no additions",
+			sequence:    func(fifo *ListFifo) {},
+			expectedSum: 0,
+		},
 		{
 			name: "additions only",
 			sequence: func(q *ListFifo) {

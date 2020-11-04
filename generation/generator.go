@@ -51,7 +51,7 @@ func (g *Generator) Start() <-chan struct{} {
 		defer func() {
 			ticker.Stop()
 			if timeout.Stop() {
-				// todo: wtf
+				// wtf, should work with inverted logic
 				<-timeout.C
 			}
 			close(done)
